@@ -12,29 +12,65 @@
 <body>
   <a class="skip-link" href="#main-content" data-i18n="skipToMain">본문으로 바로가기</a>
 
-  <div class="container">
+  <section class="hero" aria-label="되찾길">
+    <picture class="hero-media">
+      <source srcset="img/park-aerial.webp" type="image/webp">
+      <img
+        src="img/park-aerial.jpg"
+        width="1280"
+        height="851"
+        alt="올림픽공원 전경(롯데월드타워에서)"
+        data-alt-ko="올림픽공원 전경(롯데월드타워에서)"
+        data-alt-en="Olympic Park from above"
+        class="hero-img"
+        fetchpriority="high"
+      >
+    </picture>
+    <div class="hero-scrim" aria-hidden="true"></div>
+
     <header class="site-header">
-      <div class="brand">
-        <a href="./" class="wordmark">되찾길</a>
-        <p class="tagline" data-i18n="tagline">올림픽공원 분실물 길잡이</p>
-      </div>
-      <div class="header-controls">
-        <div class="seg-control" id="lang-group" role="group" aria-label="언어 선택 / Language">
-          <button type="button" class="seg-btn" id="lang-ko" data-lang="ko" aria-pressed="true">KO</button>
-          <button type="button" class="seg-btn" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
-        </div>
-        <button type="button" class="toggle-btn" id="large-text-toggle" aria-pressed="false">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 19L9.5 5h1L16 19M6 14h8M17.5 11v6M14.5 14h6"/>
+      <div class="header-inner">
+        <a href="./" class="wordmark">
+          <svg class="wordmark-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z"/>
+            <path d="M9.5 10l1.8 1.8 3.7-3.8"/>
           </svg>
-          <span data-i18n="largeText">큰 글씨</span>
-        </button>
+          <span data-i18n="tagline">올림픽공원 분실물 길잡이</span>
+        </a>
+        <div class="header-controls">
+          <div class="seg-control" id="lang-group" role="group" aria-label="언어 선택 / Language">
+            <button type="button" class="seg-btn" id="lang-ko" data-lang="ko" aria-pressed="true">KO</button>
+            <button type="button" class="seg-btn" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
+          </div>
+          <button type="button" class="toggle-btn" id="large-text-toggle" aria-pressed="false">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19L9.5 5h1L16 19M6 14h8M17.5 11v6M14.5 14h6"/>
+            </svg>
+            <span data-i18n="largeText">큰 글씨</span>
+          </button>
+        </div>
       </div>
     </header>
 
+    <div class="hero-content">
+      <h1 class="hero-title">되찾길</h1>
+      <p class="hero-subtitle" data-i18n="heroSubtitle">올림픽공원에서 잃어버린 물건, 지금 있을 곳을 알려 드려요</p>
+    </div>
+
+    <a href="#photo-credits" class="hero-credit" id="hero-credit-link" aria-label="사진 출처 보기">
+      <svg class="icon credit-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M12 16v-4"/>
+        <path d="M12 8h.01"/>
+      </svg>
+      <span>Tristan Surtel · CC BY-SA 4.0</span>
+    </a>
+  </section>
+
+  <div class="container">
     <main id="main-content">
       <section class="card search-card" aria-labelledby="search-heading">
-        <h1 id="search-heading" class="section-title" data-i18n="searchTitle">언제·어디서·무엇을</h1>
+        <h2 id="search-heading" class="sr-only" data-i18n="searchTitle">언제·어디서·무엇을</h2>
         <form id="search-form" class="search-form" novalidate>
           <div class="form-row">
             <div class="field">
@@ -53,7 +89,7 @@
             <input type="text" id="input-query" name="q" autocomplete="off" placeholder="에어팟, 카드지갑, 차키…">
           </div>
           <p id="form-error" class="form-error" role="alert" hidden></p>
-          <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+          <button type="submit" class="btn btn-primary btn-block search-submit" id="submit-btn">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7"/>
               <path d="M20 20l-3.5-3.5"/>
@@ -63,7 +99,88 @@
         </form>
       </section>
 
+      <div id="notice-bar" class="notice-bar" role="status" hidden></div>
       <div id="load-error" class="card notice-box notice-warn" role="alert" hidden></div>
+
+      <!-- 검색 전 안내: 이렇게 도와드려요 -->
+      <section class="home-intro" id="home-intro" aria-labelledby="how-heading">
+        <h2 id="how-heading" class="home-intro-title" data-i18n="howTitle">이렇게 도와드려요</h2>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <div class="feature-media">
+              <picture>
+                <source srcset="img/peace-gate-skyline.webp" type="image/webp">
+                <img
+                  src="img/peace-gate-skyline.jpg"
+                  width="1280"
+                  height="854"
+                  loading="lazy"
+                  alt="평화의문과 잠실 스카이라인"
+                  data-alt-ko="평화의문과 잠실 스카이라인"
+                  data-alt-en="World Peace Gate and skyline"
+                >
+              </picture>
+            </div>
+            <div class="feature-body">
+              <span class="feature-step" aria-hidden="true">01</span>
+              <h3 class="feature-title" data-i18n="howCard1Title">지금 있을 곳</h3>
+              <p class="feature-desc" data-i18n="howCard1Desc">분실 날짜와 이관 일정을 바탕으로 보관 단계와 담당 안내센터를 알려 드려요.</p>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-media">
+              <picture>
+                <source srcset="img/sculpture-park.webp" type="image/webp">
+                <img
+                  src="img/sculpture-park.jpg"
+                  width="1200"
+                  height="900"
+                  loading="lazy"
+                  alt="조각공원"
+                  data-alt-ko="조각공원"
+                  data-alt-en="Sculpture Park"
+                >
+              </picture>
+            </div>
+            <div class="feature-body">
+              <span class="feature-step" aria-hidden="true">02</span>
+              <h3 class="feature-title" data-i18n="howCard2Title">공원 공고 후보 검색</h3>
+              <p class="feature-desc" data-i18n="howCard2Desc">구어·영문 물건 이름을 표준 품목으로 바꿔 기간 내 공고를 모아 보여줘요.</p>
+            </div>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-media">
+              <picture>
+                <source srcset="img/lake-autumn.webp" type="image/webp">
+                <img
+                  src="img/lake-autumn.jpg"
+                  width="1200"
+                  height="900"
+                  loading="lazy"
+                  alt="가을 호수"
+                  data-alt-ko="가을 호수"
+                  data-alt-en="Lake in autumn"
+                >
+              </picture>
+            </div>
+            <div class="feature-body">
+              <span class="feature-step" aria-hidden="true">03</span>
+              <h3 class="feature-title" data-i18n="howCard3Title">한국어 확인 카드</h3>
+              <p class="feature-desc" data-i18n="howCard3Desc">안내센터 방문·통화 시 바로 보여줄 수 있는 한국어 확인 카드를 만들어요.</p>
+            </div>
+          </article>
+        </div>
+        <p class="home-data-note">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <ellipse cx="12" cy="5" rx="8" ry="3"/>
+            <path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/>
+            <path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/>
+          </svg>
+          <span data-i18n="howDataNote">한국체육산업개발(주) 올림픽공원 유실물 공고·공연 행사 일정·FAQ 공공데이터를 바탕으로 안내해요.</span>
+        </p>
+      </section>
 
       <div id="results-area" hidden>
         <!-- 결과 ① 지금 있을 곳 -->
@@ -150,16 +267,16 @@
         </section>
       </div>
 
-      <!-- 결과 ④ 자주 묻는 질문 -->
+      <!-- 결과 ④ 자주 묻는 질문 (검색 전에는 번호 숨김) -->
       <section class="card" id="section-faq" aria-labelledby="faq-heading">
         <div class="section-head">
-          <span class="step-num" aria-hidden="true">4</span>
+          <span class="step-num" id="faq-step-num" aria-hidden="true" hidden>4</span>
           <h2 id="faq-heading" class="section-title" data-i18n="faqTitle">자주 묻는 질문</h2>
         </div>
         <div class="field faq-search-field">
           <label for="input-faq" data-i18n="labelFaqSearch">궁금한 키워드로 찾기</label>
           <div class="input-with-clear">
-            <input type="search" id="input-faq" autocomplete="off" placeholder="예: 운영시간, 주차">
+            <input type="search" id="input-faq" autocomplete="off" placeholder="예: 이용시간, 주차 요금">
             <button type="button" class="clear-btn" id="faq-clear-btn" aria-label="검색어 지우기" hidden>
               <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M18 6L6 18M6 6l12 12"/>
@@ -189,6 +306,31 @@
         <span aria-hidden="true">·</span>
         <a href="https://github.com/wlsalswo14/doechatgil" target="_blank" rel="noopener noreferrer">GitHub</a>
       </p>
+      <div class="photo-credits" id="photo-credits">
+        <p class="photo-credits-title" data-i18n="photoCreditsLabel">사진</p>
+        <ul class="photo-credits-list">
+          <li>
+            Tristan Surtel,
+            <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>,
+            <a href="https://commons.wikimedia.org/wiki/File:Seoul_Olympic_Park_from_Lotte_World_Tower.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+          </li>
+          <li>
+            Woohyun Photos,
+            <a href="https://creativecommons.org/licenses/by-sa/2.0" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0</a>,
+            <a href="https://commons.wikimedia.org/wiki/File:Seoul_Olympic_Park_April_2022.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+          </li>
+          <li>
+            Teemeah,
+            <a href="https://creativecommons.org/licenses/by-sa/4.0" target="_blank" rel="noopener noreferrer">CC BY-SA 4.0</a>,
+            <a href="https://commons.wikimedia.org/wiki/File:Seoul_Olympic_Park_2017_5.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+          </li>
+          <li>
+            by nagyman (a flickr user),
+            <a href="https://creativecommons.org/licenses/by-sa/2.0" target="_blank" rel="noopener noreferrer">CC BY-SA 2.0</a>,
+            <a href="https://commons.wikimedia.org/wiki/File:Seoul-Olympic.Park-04.jpg" target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>
+          </li>
+        </ul>
+      </div>
     </footer>
   </div>
 
