@@ -424,7 +424,9 @@
       contacted: ['M20 6L9 17l-5-5'],
       returned: ['M22 11.1V12a10 10 0 1 1-5.9-9.1', 'M22 4L12 14.1l-3-3'],
       transferred: ['M5 12h14', 'M13 5l7 7-7 7'],
-      pin: ['M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z', 'M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0']
+      pin: ['M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z', 'M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0'],
+      check: ['M20 6L9 17l-5-5'],
+      chevron: ['M6 9l6 6 6-6']
     };
 
     (paths[type] || []).forEach((d) => {
@@ -553,6 +555,11 @@
     document.getElementById('input-faq').placeholder = I18N.t(lang, 'faqPlaceholder');
     document.getElementById('faq-clear-btn').setAttribute('aria-label', I18N.t(lang, 'faqClearAria'));
     document.getElementById('stage-stepper').setAttribute('aria-label', I18N.t(lang, 'stepperAria'));
+    const heroCredit = document.getElementById('hero-credit-link');
+    if (heroCredit) heroCredit.setAttribute('aria-label', I18N.t(lang, 'heroCreditAria'));
+    document.querySelectorAll('img[data-alt-ko][data-alt-en]').forEach((img) => {
+      img.alt = lang === 'en' ? img.getAttribute('data-alt-en') : img.getAttribute('data-alt-ko');
+    });
 
     if (state.data) {
       renderNotices();
@@ -659,13 +666,27 @@
     // 2) 4단계 스텝퍼
     const stepper = document.getElementById('stage-stepper');
     stepper.innerHTML = '';
-    I18N.TEXT[lang].stages.forEach((st) => {
-      const isActive = st.id === stageInfo.stage;
+    const stages = I18N.TEXT[lang].stages;
+    const activeIdx = stages.findIndex((st) => st.id === stageInfo.stage);
+    const isUrgentStage = stageInfo.stage === 'transfer_window' && Boolean(stageInfo.recent);
+    stages.forEach((st, idx) => {
+      const isDone = activeIdx >= 0 && idx < activeIdx;
+      const isActive = idx === activeIdx;
+      const cls = [
+        'stepper-step',
+        isDone ? 'is-done' : '',
+        isActive ? 'is-active' : '',
+        isActive && isUrgentStage ? 'is-urgent' : '',
+        isActive && stageInfo.stage === 'transferred' ? 'is-transferred' : ''
+      ].filter(Boolean).join(' ');
+      const dotChild = isDone
+        ? svgIcon('check')
+        : el('span', { className: 'stepper-num', text: String(idx + 1) });
       stepper.appendChild(el('li', {
-        className: `stepper-step${isActive ? ' is-active' : ''}`,
+        className: cls,
         'aria-current': isActive ? 'step' : null
       }, [
-        el('span', { className: 'stepper-dot', 'aria-hidden': 'true' }),
+        el('span', { className: 'stepper-dot', 'aria-hidden': 'true' }, dotChild),
         el('span', { className: 'stepper-label', text: st.label })
       ]));
     });
@@ -1132,13 +1153,21 @@
 
   // -------------------- 결과 ④ FAQ 렌더링 --------------------
 
+  function cleanFaqAnswer(raw) {
+    return String(raw || '')
+      .replace(/^\s*(?:-->|→)\s*(?:\r?\n)?\s*A\s*(?:\r?\n)+/i, '')
+      .replace(/^\s*A\s*(?:\r?\n)+/, '')
+      .trim();
+  }
+
   function renderFaq() {
     const lang = state.lang;
     const container = document.getElementById('faq-results');
     container.innerHTML = '';
 
     const clearBtn = document.getElementById('faq-clear-btn');
-    clearBtn.hidden = !state.faqQuery.trim();
+    const hasFaqQuery = Boolean(state.faqQuery.trim());
+    clearBtn.hidden = !hasFaqQuery;
 
     const matches = searchFaq(state.faqQuery, lang, state.data.faqKo, state.data.faqEn);
     if (matches.length === 0) {
@@ -1157,16 +1186,25 @@
     }
 
     matches.forEach((item) => {
-      container.appendChild(el('article', { className: 'faq-item' }, [
-        el('h3', { className: 'faq-q', text: item.q }),
-        el('p', { className: 'faq-a', text: item.a }),
-        el('a', {
-          className: 'ext-link faq-source',
-          href: item.url,
-          target: '_blank',
-          rel: 'noopener noreferrer'
-        }, [I18N.t(lang, /bid=0051/.test(item.url || '') ? 'faqSourceLost' : (/data\.go\.kr/.test(item.url || '') ? 'faqSourceFile' : 'faqSource')), svgIcon('external')])
-      ]));
+      const chev = svgIcon('chevron');
+      chev.setAttribute('class', 'icon chevron');
+      const details = el('details', { className: 'faq-item' }, [
+        el('summary', { className: 'faq-summary' }, [
+          el('span', { className: 'faq-q', text: item.q }),
+          chev
+        ]),
+        el('div', { className: 'faq-body' }, [
+          el('p', { className: 'faq-a', text: cleanFaqAnswer(item.a) }),
+          el('a', {
+            className: 'ext-link faq-source',
+            href: item.url,
+            target: '_blank',
+            rel: 'noopener noreferrer'
+          }, [I18N.t(lang, /bid=0051/.test(item.url || '') ? 'faqSourceLost' : (/data\.go\.kr/.test(item.url || '') ? 'faqSourceFile' : 'faqSource')), svgIcon('external')])
+        ])
+      ]);
+      if (hasFaqQuery) details.open = true;
+      container.appendChild(details);
     });
   }
 
@@ -1220,10 +1258,26 @@
   }
 
   function renderAllResults() {
-    document.getElementById('results-area').hidden = false;
+    const resultsArea = document.getElementById('results-area');
+    const wasHidden = resultsArea.hidden;
+    resultsArea.hidden = false;
+
+    const homeIntro = document.getElementById('home-intro');
+    if (homeIntro) homeIntro.hidden = true;
+    const faqStepNum = document.getElementById('faq-step-num');
+    if (faqStepNum) faqStepNum.hidden = false;
+
     renderStageSection();
     renderCandidatesSection();
     renderKoreanCard();
+
+    if (wasHidden) {
+      resultsArea.querySelectorAll('.result-section').forEach((sec) => {
+        sec.classList.remove('is-entering');
+        void sec.offsetWidth;
+        sec.classList.add('is-entering');
+      });
+    }
   }
 
   // -------------------- 검색 실행 --------------------
