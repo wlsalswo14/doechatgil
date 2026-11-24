@@ -59,7 +59,7 @@
           todos: [
             '당일~3일 안에는 습득물이 아직 정리 중일 수 있으니 담당 안내센터에 전화로 먼저 확인해 보세요.',
             '방문·통화 시 아래 3번 한국어 확인 카드에 특징을 정리해 두면 빠르게 확인할 수 있어요.',
-            '1~2일 뒤 다시 공고를 확인하거나, 공원 밖 지하철역에서 잃어버렸다면 LOST112도 함께 조회하세요.'
+            '1~2일 뒤 다시 공고를 확인하거나, 공원 밖 지하철역에서 잃어버렸다면 경찰민원24도 함께 조회하세요.'
           ]
         },
         kept: {
@@ -74,14 +74,14 @@
           desc: '정기 경찰서 이관 시점이 가까워졌거나 이미 이관되었을 수 있는 구간이에요.',
           todos: [
             '담당 안내센터에 전화해 아직 센터에 보관 중인지, 경찰서로 넘어갔는지 확인하세요.',
-            '이미 이관되었다면 이관 날짜와 접수 번호를 안내받은 뒤 LOST112에서 조회하세요.',
+            '이미 이관되었다면 이관 날짜와 접수 번호를 안내받은 뒤 경찰민원24에서 조회하세요.',
             '아래 2번 공고 목록에서 해당 날짜 주변 공고의 상태(보관 중/경찰서 이관)를 확인해 보세요.'
           ]
         },
         transferred: {
           desc: '이 날짜의 미반환 습득물은 관할 경찰서로 이관된 구간이에요.',
           todos: [
-            '이관된 경찰서와 이관일을 확인한 뒤 경찰청 유실물 포털(LOST112)에서 검색하세요.',
+            '이관된 경찰서와 이관일을 확인한 뒤 경찰민원24(옛 경찰민원24)에서 검색하세요.',
             '아래 2번 공고에 비슷한 물건이 있다면 원문 공고 번호를 메모해 두면 문의에 도움이 됩니다.',
             '혹시 보관 여부 확인이 필요하면 담당 안내센터에도 함께 문의할 수 있어요.'
           ]
@@ -89,10 +89,16 @@
       },
       eventBanner: '이날 {venue}에서 ‘{title}’ 행사가 열렸어요. 공연장 안에서 잃어버렸다면 주최 측에 먼저 문의해 보세요.',
       eventOrganizer: '주최',
-      eventContact: '문의',
+      eventContact: '문의(예매처 포함)',
+      transferInfoUnknown: '이 날짜는 최근 이관 기준일보다 앞서요. 공지 기간에 빠져 있어도 이미 경찰서로 넘어갔을 가능성이 높아요.',
+      asofBanner: '시연 기준일 {d} 기준 화면입니다. 실제 오늘과 다를 수 있어요.',
+      staleBanner: '데이터 갱신이 늦어지고 있어요(마지막 갱신 {u}). 안내센터에 전화로 함께 확인하세요.',
+      recentWindow: '분실한 지 얼마 안 됐지만, 지금은 공원이 습득물을 경찰서로 넘기는 시기예요. 기다리지 말고 오늘 바로 전화하세요.',
+      noticeNameLabel: '공고 품명',
+      dictDownload: '품목·장소 표준 사전 내려받기(CSV)',
       eventLink: '행사 원문',
       transferInfo: '이관일 {moved} · 이관 경찰서 {station}',
-      lost112Btn: 'LOST112 바로가기',
+      lost112Btn: '경찰민원24 바로가기',
       centerSectionOne: '담당 안내센터',
       centerSectionBoth: '올림픽공원 안내센터 (장소 미지정 시 두 곳 모두 확인)',
       hoursLabel: '운영시간',
@@ -121,11 +127,11 @@
       emptyAdvice: {
         pending: '분실 후 3일 이내에는 습득물이 아직 게시판에 등록되지 않았을 수 있어요. 안내센터에 직접 전화해 확인해 보세요.',
         kept: '품목 분류가 다를 수 있으니 위 품목 후보를 바꾸어 보거나, 담당 안내센터에 전화로 문의해 보세요.',
-        transfer_window: '기간 외 공고일 수 있으니 오른쪽 ‘전체 기간 보기’를 켜거나 안내센터·LOST112를 함께 확인해 보세요.',
-        transferred: '이미 경찰서로 이관된 기간이에요. LOST112에서 직접 조회하거나 ‘전체 기간 보기’로 이전 공고를 살펴보세요.'
+        transfer_window: '기간 외 공고일 수 있으니 오른쪽 ‘전체 기간 보기’를 켜거나 안내센터·경찰민원24를 함께 확인해 보세요.',
+        transferred: '이미 경찰서로 이관된 기간이에요. 경찰민원24에서 직접 조회하거나 ‘전체 기간 보기’로 이전 공고를 살펴보세요.'
       },
       policeTitle: '경찰청 습득물',
-      policeEmpty: '주변 역·경찰서 습득물은 LOST112에서 이어서 찾을 수 있어요(올림픽공원역·몽촌토성역·한성백제역).',
+      policeEmpty: '주변 역·경찰서 습득물은 경찰민원24에서 이어서 찾을 수 있어요(올림픽공원역·몽촌토성역·한성백제역).',
       policeColorLabel: '색상',
 
       cardSummary: '안내센터에 보여 줄 확인 카드 만들기',
@@ -143,7 +149,8 @@
 
       faqTitle: '자주 묻는 질문',
       labelFaqSearch: '궁금한 키워드로 찾기',
-      faqPlaceholder: '예: 운영시간, 주차',
+      faqPlaceholder: '예: 이용시간, 주차 요금',
+      faqSourceFile: '근거: 한국체육산업개발 자주 묻는 질문정보(공공데이터포털)',
       faqClearAria: '검색어 지우기',
       faqSource: '근거: 올림픽공원 FAQ 원문',
       faqSourceLost: '근거: 올림픽공원 유실물센터 안내 원문',
@@ -192,7 +199,7 @@
           todos: [
             'Call the responsible Info Center directly to check if a matching item has been turned in.',
             'Prepare item details using the Korean verification card in section 3 before visiting or calling.',
-            'Check the board again in 1–2 days, or search LOST112 if lost near a subway station.'
+            'Check the board again in 1–2 days, or search Police Minwon24 if lost near a subway station.'
           ]
         },
         kept: {
@@ -207,25 +214,32 @@
           desc: 'The scheduled police transfer window is approaching or may have just passed.',
           todos: [
             'Call the Info Center to confirm whether the item is still on-site or transferred.',
-            'If transferred, ask for the transfer date and check the national police portal (LOST112).',
+            'If transferred, ask for the transfer date and check the police Lost & Found portal (Police Minwon24).',
             'Check the status badges of nearby notices in section 2 below.'
           ]
         },
         transferred: {
           desc: 'Unclaimed items from this date have been transferred to the local police station.',
           todos: [
-            'Search on Korea’s national Lost & Found portal (LOST112) using the transfer date and station below.',
+            'Search on Korea’s police Lost & Found portal (Police Minwon24, formerly Police Minwon24) using the transfer date and station below.',
             'If you see a matching park notice in section 2, note the notice number for reference.',
             'You can still contact the Info Center to double-check transfer records.'
           ]
         }
       },
       eventBanner: '‘{title}’ took place at {venue} on this day. If lost inside the venue, contact the event organizer first.',
-      eventOrganizer: 'Organizer',
-      eventContact: 'Contact',
+      eventOrganizer: 'Organizer (in Korean)',
+      eventContact: 'Inquiry / tickets (in Korean)',
+      transferInfoUnknown: 'This date is before the latest transfer cut-off. Even if it is not covered by a notice, the item has most likely moved to the police station.',
+      asofBanner: 'Demo view as of {d}. This may differ from today.',
+      staleBanner: 'Data updates are delayed (last update {u}). Please also call the Info Center.',
+      recentWindow: 'You lost it only recently, but the park is about to hand found items to the police. Call the Info Center today instead of waiting.',
+      noticeNameLabel: 'Notice (Korean)',
+      dictDownload: 'Download item & place dictionary (CSV)',
+      enShowLink: 'Global ticket page',
       eventLink: 'Event notice',
       transferInfo: 'Transferred on {moved} · Station: {station}',
-      lost112Btn: 'Open LOST112',
+      lost112Btn: 'Open Police Minwon24',
       centerSectionOne: 'Assigned Info Center',
       centerSectionBoth: 'Olympic Park Info Centers (check both when location is unsure)',
       hoursLabel: 'Hours',
@@ -254,11 +268,11 @@
       emptyAdvice: {
         pending: 'Within 3 days of losing an item, it may not appear online yet. Try calling the Info Center directly.',
         kept: 'It might be listed under a nearby category. Try another category chip above or call the Info Center.',
-        transfer_window: 'Try enabling “Show all dates” or check both the Info Center and LOST112.',
-        transferred: 'Items from this period have moved to the police station. Search on LOST112 or enable “Show all dates”.'
+        transfer_window: 'Try enabling “Show all dates” or check both the Info Center and Police Minwon24.',
+        transferred: 'Items from this period have moved to the police station. Search on Police Minwon24 or enable “Show all dates”.'
       },
       policeTitle: 'Police found items',
-      policeEmpty: 'You can continue searching items found at nearby subway and police stations on LOST112 (Olympic Park Stn, Mongchontoseong Stn, Hanseong Baekje Stn).',
+      policeEmpty: 'You can continue searching items found at nearby subway and police stations on Police Minwon24 (Olympic Park Stn, Mongchontoseong Stn, Hanseong Baekje Stn).',
       policeColorLabel: 'Color',
 
       cardSummary: 'Create Korean verification card for Info Center',
@@ -280,6 +294,7 @@
       faqClearAria: 'Clear search',
       faqSource: 'Source: Official Olympic Park FAQ',
       faqSourceLost: 'Source: Olympic Park Lost & Found notice',
+      faqSourceFile: 'Source: KSPO&CO FAQ (Korean original, Public Data Portal)',
       faqNoMatch: 'We couldn’t find an exact answer. Please contact an Info Center.',
 
       statsTitle: 'Data at a glance',

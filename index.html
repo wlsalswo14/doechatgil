@@ -19,7 +19,7 @@
         <p class="tagline" data-i18n="tagline">올림픽공원 분실물 길잡이</p>
       </div>
       <div class="header-controls">
-        <div class="seg-control" role="group" aria-label="언어 선택">
+        <div class="seg-control" id="lang-group" role="group" aria-label="언어 선택 / Language">
           <button type="button" class="seg-btn" id="lang-ko" data-lang="ko" aria-pressed="true">KO</button>
           <button type="button" class="seg-btn" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
         </div>
@@ -65,7 +65,7 @@
 
       <div id="load-error" class="card notice-box notice-warn" role="alert" hidden></div>
 
-      <div id="results-area" aria-live="polite" hidden>
+      <div id="results-area" hidden>
         <!-- 결과 ① 지금 있을 곳 -->
         <section class="card result-section" id="section-stage" aria-labelledby="stage-heading">
           <div class="section-head">
@@ -74,7 +74,7 @@
           </div>
           <div id="event-banner-wrap"></div>
           <ol class="stepper" id="stage-stepper" aria-label="보관 단계"></ol>
-          <div id="stage-body"></div>
+          <div id="stage-body" aria-live="polite"></div>
         </section>
 
         <!-- 결과 ② 공원 공고 후보 -->
@@ -167,7 +167,7 @@
             </button>
           </div>
         </div>
-        <div id="faq-results" class="faq-list" aria-live="polite"></div>
+        <div id="faq-results" class="faq-list"></div>
       </section>
 
       <!-- 데이터 한눈에 -->
