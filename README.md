@@ -32,7 +32,6 @@ collector/collect.py     수집·정규화 (표준 라이브러리만 사용)
 collector/dictionary.py  품목 사전(경찰청 분류 기준)과 장소 사전
 analysis/stats.py        기획서 수치 재현 → analysis/stats.json
 site/                    정적 웹 (index.html, style.css, app.js, data/*.json)
-.github/workflows/       하루 3회 수집 → GitHub Pages 배포
 ```
 
 ## 실행
@@ -44,3 +43,5 @@ python -m http.server 8765 --directory site
 ```
 
 API 키는 저장소 Secrets(`KCISA_KEY`, `DATA_GO_KR_KEY`)에만 둡니다.
+
+시연 사이트는 `site/` 폴더를 `gh-pages` 브랜치로 배포합니다. 데이터 기준 시각은 화면 아래 "마지막 갱신"에 표시됩니다.
