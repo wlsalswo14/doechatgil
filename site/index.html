@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>되찾길 — 올림픽공원 분실물 길잡이</title>
+  <meta name="description" content="올림픽공원에서 물건을 잃어버렸을 때 지금 물건이 있을 곳, 공원 공고 후보, 안내센터 확인 카드, 공식 FAQ를 한눈에 확인하는 길잡이">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <a class="skip-link" href="#main-content" data-i18n="skipToMain">본문으로 바로가기</a>
+
+  <div class="container">
+    <header class="site-header">
+      <div class="brand">
+        <a href="./" class="wordmark">되찾길</a>
+        <p class="tagline" data-i18n="tagline">올림픽공원 분실물 길잡이</p>
+      </div>
+      <div class="header-controls">
+        <div class="seg-control" role="group" aria-label="언어 선택">
+          <button type="button" class="seg-btn" id="lang-ko" data-lang="ko" aria-pressed="true">KO</button>
+          <button type="button" class="seg-btn" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
+        </div>
+        <button type="button" class="toggle-btn" id="large-text-toggle" aria-pressed="false">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 19L9.5 5h1L16 19M6 14h8M17.5 11v6M14.5 14h6"/>
+          </svg>
+          <span data-i18n="largeText">큰 글씨</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <section class="card search-card" aria-labelledby="search-heading">
+        <h1 id="search-heading" class="section-title" data-i18n="searchTitle">언제·어디서·무엇을</h1>
+        <form id="search-form" class="search-form" novalidate>
+          <div class="form-row">
+            <div class="field">
+              <label for="input-date" data-i18n="labelDate">잃어버린 날짜</label>
+              <input type="date" id="input-date" name="d" required>
+            </div>
+            <div class="field">
+              <label for="input-zone" data-i18n="labelZone">장소</label>
+              <select id="input-zone" name="z">
+                <option value="" data-i18n="zoneUnknown">모르겠어요</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label for="input-query" data-i18n="labelItem">물건</label>
+            <input type="text" id="input-query" name="q" autocomplete="off" placeholder="에어팟, 카드지갑, 차키…">
+          </div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M20 20l-3.5-3.5"/>
+            </svg>
+            <span data-i18n="searchBtn">찾아보기</span>
+          </button>
+        </form>
+      </section>
+
+      <div id="load-error" class="card notice-box notice-warn" role="alert" hidden></div>
+
+      <div id="results-area" aria-live="polite" hidden>
+        <!-- 결과 ① 지금 있을 곳 -->
+        <section class="card result-section" id="section-stage" aria-labelledby="stage-heading">
+          <div class="section-head">
+            <span class="step-num" aria-hidden="true">1</span>
+            <h2 id="stage-heading" class="section-title" data-i18n="stageTitle">지금 있을 곳</h2>
+          </div>
+          <div id="event-banner-wrap"></div>
+          <ol class="stepper" id="stage-stepper" aria-label="보관 단계"></ol>
+          <div id="stage-body"></div>
+        </section>
+
+        <!-- 결과 ② 공원 공고 후보 -->
+        <section class="card result-section" id="section-candidates" aria-labelledby="candidates-heading">
+          <div class="section-head">
+            <span class="step-num" aria-hidden="true">2</span>
+            <h2 id="candidates-heading" class="section-title" data-i18n="candidatesTitle">공원 공고 후보</h2>
+          </div>
+          <div id="interpretation-bar" class="interpretation-bar"></div>
+          <div class="candidates-toolbar">
+            <p id="candidates-summary" class="muted-text"></p>
+            <label class="switch-label" for="toggle-all-period">
+              <input type="checkbox" id="toggle-all-period">
+              <span data-i18n="allPeriod">전체 기간 보기</span>
+            </label>
+          </div>
+          <div id="candidates-list" class="item-list"></div>
+          <div id="candidates-more-wrap" class="more-wrap"></div>
+
+          <div class="sub-block" id="police-block">
+            <h3 class="sub-title" data-i18n="policeTitle">경찰청 습득물</h3>
+            <div id="police-content"></div>
+          </div>
+        </section>
+
+        <!-- 결과 ③ 한국어 확인 카드 -->
+        <section class="card result-section" id="section-card" aria-labelledby="card-heading">
+          <details id="confirm-card-details" class="accordion">
+            <summary class="accordion-summary">
+              <span class="section-head compact">
+                <span class="step-num" aria-hidden="true">3</span>
+                <span id="card-heading" class="section-title" data-i18n="cardSummary">안내센터에 보여 줄 확인 카드 만들기</span>
+              </span>
+              <svg class="icon chevron" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </summary>
+            <div class="accordion-body">
+              <div class="card-inputs">
+                <div class="field">
+                  <label for="card-color" data-i18n="labelColor">색상</label>
+                  <select id="card-color"></select>
+                </div>
+                <div class="field">
+                  <label for="card-brand" data-i18n="labelBrand">브랜드·모델</label>
+                  <input type="text" id="card-brand" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="card-feature" data-i18n="labelFeature">특징·내용물</label>
+                  <input type="text" id="card-feature" autocomplete="off">
+                </div>
+              </div>
+              <div id="korean-card-preview" class="korean-card" lang="ko"></div>
+              <p id="korean-card-en-note" class="en-note" hidden></p>
+              <div class="card-actions">
+                <button type="button" class="btn btn-primary" id="copy-card-btn">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="9" y="9" width="11" height="11" rx="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span data-i18n="copyCardBtn">문구 복사</span>
+                </button>
+                <a class="btn btn-secondary" id="call-center-btn" href="tel:02-2180-3564">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 11.2 19a19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.5 2.1L8 9.7a16 16 0 0 0 6.3 6.3l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/>
+                  </svg>
+                  <span data-i18n="callCenterBtn">안내센터 전화</span>
+                </a>
+              </div>
+              <p id="copy-feedback" class="copy-feedback" role="status" aria-live="polite"></p>
+            </div>
+          </details>
+        </section>
+      </div>
+
+      <!-- 결과 ④ 자주 묻는 질문 -->
+      <section class="card" id="section-faq" aria-labelledby="faq-heading">
+        <div class="section-head">
+          <span class="step-num" aria-hidden="true">4</span>
+          <h2 id="faq-heading" class="section-title" data-i18n="faqTitle">자주 묻는 질문</h2>
+        </div>
+        <div class="field faq-search-field">
+          <label for="input-faq" data-i18n="labelFaqSearch">궁금한 키워드로 찾기</label>
+          <div class="input-with-clear">
+            <input type="search" id="input-faq" autocomplete="off" placeholder="예: 운영시간, 주차">
+            <button type="button" class="clear-btn" id="faq-clear-btn" aria-label="검색어 지우기" hidden>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div id="faq-results" class="faq-list" aria-live="polite"></div>
+      </section>
+
+      <!-- 데이터 한눈에 -->
+      <section class="card stats-section" id="section-stats" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" class="section-title stats-title" data-i18n="statsTitle">데이터 한눈에</h2>
+        <div id="stats-grid" class="stats-grid"></div>
+        <div class="transfers-wrap">
+          <h3 class="sub-title" data-i18n="transferScheduleTitle">이관 일정 (최근 6회)</h3>
+          <ul id="transfers-list" class="transfers-list"></ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" id="site-footer">
+      <p id="footer-updated" class="footer-line"></p>
+      <p class="footer-line" data-i18n="footerSource">출처: 한국체육산업개발(주) 올림픽공원 유실물 공고·공연 행사 일정·FAQ (공공누리)</p>
+      <p class="footer-line footer-meta">
+        <span data-i18n="footerPrivacy">개인정보를 수집·전송하지 않습니다</span>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/wlsalswo14/doechatgil" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </p>
+    </footer>
+  </div>
+
+  <script src="i18n.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>

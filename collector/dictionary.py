@@ -1,0 +1,89 @@
+# -*- coding: utf-8 -*-
+"""표준 품목·장소 사전. 품목은 경찰청 습득물 분류(대분류)에 맞춰 묶는다.
+syn: 공고 표기 + 구어 + 영어·일본어·중국어 동의어. 순서가 곧 우선순위다(예: 스마트워치 → 차량 키보다 먼저)."""
+import re
+
+CATEGORIES = [
+    {"id": "watch", "ko": "시계", "en": "Watch", "police": "시계",
+     "syn": ["스마트워치", "스마트 워치", "워치", "손목시계", "시계", "전자시계", "애플워치", "갤럭시워치",
+             "watch", "smartwatch", "apple watch", "腕時計", "時計", "スマートウォッチ", "手表", "智能手表"]},
+    {"id": "earphone", "ko": "무선 이어폰", "en": "Earphones", "police": "전자기기",
+     "syn": ["블루투스 이어폰", "무선 이어폰", "무선이어폰", "이어폰", "에어팟", "버즈", "헤드셋", "헤드폰",
+             "airpods", "airpod", "earbuds", "earbud", "earphones", "earphone", "headphones", "headset", "buds",
+             "イヤホン", "ワイヤレスイヤホン", "ヘッドホン", "耳机", "无线耳机"]},
+    {"id": "carkey", "ko": "자동차 열쇠", "en": "Car key", "police": "자동차",
+     "syn": ["차key", "차 key", "차키", "차 키", "자동차키", "자동차 키", "자동차 key", "스마트키", "스마트 키", "스마트key", "스마트 key",
+             "car key", "car keys", "key fob", "fob", "車の鍵", "車のキー", "スマートキー", "车钥匙", "汽车钥匙"]},
+    {"id": "phone", "ko": "휴대폰", "en": "Phone", "police": "휴대폰",
+     "syn": ["휴대폰", "핸드폰", "휴대전화", "스마트폰", "아이폰", "갤럭시", "폰",
+             "phone", "cellphone", "cell phone", "mobile", "iphone", "smartphone", "galaxy",
+             "携帯", "スマホ", "携帯電話", "手机"]},
+    {"id": "wallet", "ko": "지갑", "en": "Wallet", "police": "지갑",
+     "syn": ["카드지갑", "카드 지갑", "목걸이형 카드지갑", "반지갑", "장지갑", "동전지갑", "머니클립", "카드케이스", "카드홀더", "지갑",
+             "wallet", "card holder", "cardholder", "card case", "purse", "money clip",
+             "財布", "カードケース", "钱包", "卡包"]},
+    {"id": "bag", "ko": "가방", "en": "Bag", "police": "가방",
+     "syn": ["가방", "백팩", "핸드백", "파우치", "쇼핑백", "에코백", "캐리어", "여행용가방", "여행용 가방", "종이가방", "부직포 가방", "크로스백", "방수팩",
+             "bag", "backpack", "handbag", "pouch", "tote", "suitcase", "shopping bag",
+             "バッグ", "かばん", "鞄", "リュック", "ポーチ", "包", "背包", "手提包"]},
+    {"id": "glasses", "ko": "안경", "en": "Glasses", "police": "기타물품",
+     "syn": ["선글라스", "썬글라스", "안경", "glasses", "sunglasses", "spectacles",
+             "メガネ", "眼鏡", "サングラス", "眼镜", "墨镜", "太阳镜"]},
+    {"id": "device", "ko": "전자기기", "en": "Electronics", "police": "전자기기",
+     "syn": ["카메라", "디지털 카메라", "즉석 카메라", "노트북", "태블릿", "아이패드", "보조배터리", "블루투스 스피커", "스피커", "드론", "mp3",
+             "셀카봉", "리모컨", "보청기", "체성분",
+             "camera", "laptop", "tablet", "ipad", "power bank", "speaker", "drone",
+             "カメラ", "ノートパソコン", "モバイルバッテリー", "相机", "笔记本电脑", "充电宝"]},
+    {"id": "jewelry", "ko": "귀금속", "en": "Jewelry", "police": "귀금속",
+     "syn": ["반지", "목걸이", "팔찌", "귀걸이", "ring", "necklace", "bracelet", "earring", "指輪", "ネックレス", "戒指", "项链"]},
+    {"id": "clothes", "ko": "의류", "en": "Clothing", "police": "의류",
+     "syn": ["의류", "점퍼", "외투", "자켓", "재킷", "모자", "장갑", "목도리", "jacket", "coat", "hat", "cap", "gloves", "scarf",
+             "ジャケット", "帽子", "手袋", "外套", "帽子"]},
+    {"id": "kids", "ko": "유아·레저용품", "en": "Kids & leisure", "police": "스포츠용품",
+     "syn": ["유모차", "유아용 킥보드", "킥보드", "인라인", "아기신발", "인형", "라켓", "캐치볼", "그늘막", "텐트", "우양산", "우산", "양산",
+             "stroller", "scooter", "doll", "racket", "umbrella", "tent", "ベビーカー", "傘", "婴儿车", "雨伞"]},
+    {"id": "id", "ko": "증명서·카드", "en": "ID & cards", "police": "증명서",
+     "syn": ["여권", "신분증", "통장", "도장", "수첩", "파일", "passport", "id card", "license", "パスポート", "护照"]},
+    {"id": "key", "ko": "열쇠", "en": "Keys", "police": "기타물품",
+     "syn": ["열쇠꾸러미", "열쇠 꾸러미", "열쇠", "keys", "key", "鍵", "钥匙"]},
+    {"id": "etc", "ko": "기타", "en": "Other", "police": "기타물품", "syn": []},
+]
+
+ZONES = [
+    {"id": "kspodome", "ko": "KSPO DOME", "en": "KSPO DOME", "syn": ["kspo", "dome", "체조경기장", "체조"], "center": "meeting"},
+    {"id": "olympichall", "ko": "올림픽홀", "en": "Olympic Hall", "syn": ["올림픽홀", "뮤즈라이브", "olympic hall"], "center": "peace"},
+    {"id": "handball", "ko": "핸드볼경기장", "en": "Handball Stadium", "syn": ["핸드볼", "티켓링크 라이브", "handball"], "center": "meeting"},
+    {"id": "woori", "ko": "우리금융아트홀", "en": "Woori Financial Art Hall", "syn": ["우리금융", "아트홀", "art hall"], "center": "peace"},
+    {"id": "peace", "ko": "평화의광장", "en": "Peace Plaza", "syn": ["평화의광장", "평화의 광장", "평화의광징", "평화의문", "평화의 문", "국기광장", "올림픽회관", "회관", "몽촌해자", "수변무대", "peace plaza", "peace gate"], "center": "peace"},
+    {"id": "meeting", "ko": "만남의광장", "en": "Meeting Plaza", "syn": ["만남의광장", "만남의 광장", "meeting plaza"], "center": "meeting"},
+    {"id": "lawn88", "ko": "88잔디마당", "en": "88 Lawn", "syn": ["88잔디", "88 잔디", "88마당", "잔디마당", "88 lawn", "lawn"], "center": "meeting"},
+    {"id": "lake88", "ko": "88호수", "en": "88 Lake", "syn": ["88호수", "호수", "88 lake", "lake"], "center": "meeting"},
+    {"id": "mongchon", "ko": "몽촌토성", "en": "Mongchon Fortress", "syn": ["몽촌토성", "나홀로", "곰말", "들꽃", "야생화", "토성", "몽촌정", "한성백제", "mongchon", "lone tree"], "center": "peace"},
+    {"id": "rose", "ko": "장미광장", "en": "Rose Square", "syn": ["장미", "rose"], "center": "meeting"},
+    {"id": "picnic", "ko": "피크닉장", "en": "Picnic Area", "syn": ["피크닉", "picnic"], "center": "peace"},
+    {"id": "hanul", "ko": "한얼광장", "en": "Haneol Plaza", "syn": ["한얼", "haneol"], "center": "meeting"},
+    {"id": "global", "ko": "지구촌공원", "en": "Global Village Park", "syn": ["지구촌"], "center": "meeting"},
+    {"id": "soma", "ko": "소마미술관·조각공원", "en": "SOMA Museum", "syn": ["소마", "조각", "soma"], "center": "peace"},
+    {"id": "sports", "ko": "벨로드롬·수영장·테니스장", "en": "Velodrome / Pool / Tennis", "syn": ["벨로드롬", "수영장", "테니스", "펜싱", "velodrome", "pool", "tennis"], "center": "meeting"},
+    {"id": "gates", "ko": "출입문·주차장", "en": "Gates / Parking", "syn": ["남1문", "남2문", "남3문", "남4문", "동1문", "동2문", "북1문", "북2문", "서1문", "주차장", "p1", "p2", "p3", "parking", "gate"], "center": "meeting"},
+    {"id": "unknown", "ko": "공원 내(위치 미상)", "en": "Somewhere in the park", "syn": [], "center": None},
+]
+
+def _norm(s):
+    return re.sub(r"\s+", "", (s or "").lower())
+
+def classify_item(name):
+    n = _norm(name)
+    for c in CATEGORIES:
+        for s in c["syn"]:
+            if _norm(s) and _norm(s) in n:
+                return c["id"]
+    return "etc"
+
+def classify_zone(place):
+    n = _norm(place)
+    for z in ZONES:
+        for s in z["syn"]:
+            if _norm(s) and _norm(s) in n:
+                return z["id"]
+    return "unknown"

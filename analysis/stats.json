@@ -1,0 +1,128 @@
+{
+ "items_total": 641,
+ "date_range": [
+  "2012-03-03",
+  "2026-11-18"
+ ],
+ "y2026": {
+  "n": 99,
+  "status": {
+   "kept": 1,
+   "transferred": 69,
+   "returned": 29
+  },
+  "transferred_pct": 69.7,
+  "returned_pct": 29.3,
+  "contacted_in_transferred": 4
+ },
+ "transfers_2026": {
+  "n": 10,
+  "gaps": [
+   30,
+   27,
+   42,
+   20,
+   35,
+   28,
+   29,
+   35,
+   35
+  ],
+  "mean": 31.2,
+  "min": 20,
+  "max": 42,
+  "stations": {
+   "송파경찰서": 4,
+   "관할 경찰서": 6
+  }
+ },
+ "names_since2016": 74,
+ "carkey_variants": [
+  "스마트 KEY",
+  "스마트 키",
+  "스마트key",
+  "스마트키",
+  "스피커 차key",
+  "자동차 key",
+  "자동차 키",
+  "자동차키",
+  "차 key",
+  "차 키",
+  "차key",
+  "차키"
+ ],
+ "places_since2016": 200,
+ "recall": {
+  "ko_pct": 37.3,
+  "en_pct": 0.0,
+  "detail": {
+   "차키": [
+    6,
+    53
+   ],
+   "car key": [
+    0,
+    53
+   ],
+   "에어팟": [
+    0,
+    20
+   ],
+   "무선이어폰": [
+    4,
+    20
+   ],
+   "earbuds": [
+    0,
+    20
+   ],
+   "스마트워치": [
+    12,
+    12
+   ],
+   "apple watch": [
+    0,
+    12
+   ],
+   "카드지갑": [
+    53,
+    54
+   ],
+   "card holder": [
+    0,
+    54
+   ],
+   "선글라스": [
+    10,
+    11
+   ],
+   "sunglasses": [
+    0,
+    11
+   ],
+   "핸드폰": [
+    0,
+    58
+   ],
+   "phone": [
+    0,
+    58
+   ]
+  }
+ },
+ "weekend_pct": {
+  "since2016": 44.7,
+  "y2026": 32.3
+ },
+ "post_lag_2025plus": {
+  "n": 146,
+  "within1_pct": 79.5,
+  "within3_pct": 97.3
+ },
+ "venue_near_2026": 7,
+ "kspodome_centers": {
+  "meeting": 11,
+  "peace": 3
+ },
+ "kept_now": 1
+}
