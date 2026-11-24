@@ -92,7 +92,7 @@
         transferred: {
           desc: '이 날짜의 미반환 습득물은 관할 경찰서로 이관된 구간이에요.',
           todos: [
-            '이관된 경찰서와 이관일을 확인한 뒤 경찰민원24(옛 경찰민원24)에서 검색하세요.',
+            '이관된 경찰서와 이관일을 확인한 뒤 경찰민원24(옛 LOST112)에서 검색하세요.',
             '아래 2번 공고에 비슷한 물건이 있다면 원문 공고 번호를 메모해 두면 문의에 도움이 됩니다.',
             '혹시 보관 여부 확인이 필요하면 담당 안내센터에도 함께 문의할 수 있어요.'
           ]
@@ -243,7 +243,7 @@
         transferred: {
           desc: 'Unclaimed items from this date have been transferred to the local police station.',
           todos: [
-            'Search on Korea’s police Lost & Found portal (Police Minwon24, formerly Police Minwon24) using the transfer date and station below.',
+            'Search on Korea’s police Lost & Found portal (Police Minwon24, formerly LOST112) using the transfer date and station below.',
             'If you see a matching park notice in section 2, note the notice number for reference.',
             'You can still contact the Info Center to double-check transfer records.'
           ]

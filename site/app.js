@@ -168,6 +168,19 @@
 
   // -------------------- 단계·행사·후보·FAQ·통계 로직 --------------------
 
+  // 시연 기준일(asof) 시점의 유실물 데이터: 그날까지 게시된 공고만 남기고,
+  // 그 뒤에 일어난 이관은 아직 일어나지 않은 것으로 되돌린다.
+  function lostAsOf(lost, asof) {
+    if (!lost || !asof) return lost;
+    const items = (lost.items || [])
+      .filter((i) => (i.posted || i.date || '') <= asof)
+      .map((i) => (i.moved && i.moved > asof)
+        ? Object.assign({}, i, { status: 'kept', moved: null, station: null })
+        : i);
+    const transfers = (lost.transfers || []).filter((t) => t.moved && t.moved <= asof);
+    return Object.assign({}, lost, { items, transfers });
+  }
+
   // 단계 판정. transfers는 최신순이며 todayStr 이전에 실제로 이관된 공지만 본다.
   function determineStage(lostDate, todayStr, transfers) {
     const list = (transfers || []).filter((tr) => tr.moved && tr.moved <= todayStr);
@@ -264,7 +277,9 @@
         return [idx42, keep].filter(Boolean);
       }
       const items = [];
-      if (faqKo[42]) items.push(faqKo[42]);
+      // 첫 화면 기본 FAQ: 순서가 바뀌어도 분실물 문항을 고른다
+      const lostFaq = (faqKo || []).find((f) => /분실|유실|잃어/.test(f.q));
+      if (lostFaq) items.push(lostFaq);
       items.push(I18N.KO_RETENTION_FAQ);
       return items;
     }
@@ -1426,7 +1441,7 @@
 
       let enShows = [];
       try { enShows = await fetchJson('data/en_shows.json'); } catch (_) { enShows = []; }
-      state.data = { lost, events, dict, faqKo, faqEn, police, meta, enShows };
+      state.data = { lost: lostAsOf(lost, state.asof), events, dict, faqKo, faqEn, police, meta, enShows };
       renderNotices();
       populateZoneSelect();
       populateColorSelect();
@@ -1446,6 +1461,7 @@
   }
 
   const logicExports = {
+    lostAsOf,
     getTodayKST,
     diffDays,
     addDays,

@@ -74,3 +74,26 @@ test('FAQ: 근거가 약하면 답하지 않음', () => {
   assert.ok(!L.searchFaq('운영시간', 'ko', ko, en).some((x) => /미사/.test(x.q)));
   assert.ok(L.searchFaq('where is the info center', 'en', ko, en).length >= 1);
 });
+
+test('시연 기준일(asof): 그날 이후 공고·이관은 보이지 않음', () => {
+  const v = L.lostAsOf(lost, '2026-11-16');
+  assert.ok(v.items.every((i) => (i.posted || i.date) <= '2026-11-16'));
+  assert.ok(!v.items.some((i) => i.moved && i.moved > '2026-11-16'));
+  assert.ok(v.transfers.every((t) => t.moved <= '2026-11-16'));
+  assert.strictEqual(L.determineStage('2026-11-15', '2026-11-16', v.transfers).stage, 'transfer_window');
+});
+
+test('백테스트: 기획서 수치(601건 중 87%) 재현', () => {
+  const { execFileSync } = require('child_process');
+  const out = execFileSync(process.execPath, [path.join(__dirname, '..', 'analysis', 'backtest.cjs'), path.join(__dirname, '..', 'analysis', 'snapshot_20261124', 'lost.json')], { encoding: 'utf8' });
+  const r = JSON.parse(out.trim().split('\n').pop());
+  assert.strictEqual(r.queries, 601);
+  assert.strictEqual(Math.round(r.rate), 87);
+});
+
+test('FAQ: 첫 화면 기본 문항은 분실물 관련', () => {
+  const ko = read('faq_ko.json');
+  const en = read('faq_en.json');
+  const d = L.searchFaq('', 'ko', ko, en);
+  assert.ok(/분실|유실|잃어/.test(d[0].q), d[0].q);
+});
