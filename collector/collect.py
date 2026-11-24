@@ -110,17 +110,24 @@ def parse_view(h):
                     items.append({"date": d.isoformat(), "name": im[1].strip(), "qty": "1", "place_raw": "", "desc": im[2].strip(),
                                   "note": note, "center": cen})
     transfer = None
-    m = re.search(r"(20\d\d)년\s*(\d{1,2})월\s*(\d{1,2})일\s*(?:~\s*(\d{1,2})월\s*(\d{1,2})일)?\s*까지\s*습득물은.*?(\d{1,2})월\s*(\d{1,2})일\s*자로\s*(\S*?경찰서)", t)
+    # 이관 공지 서식(2016~2026):
+    #  "2026년 10월 29일 ~11월 16일 까지 습득물은 … 11월 18일자로 송파경찰서로 이관"
+    #  "2026년 8월 11일 까지 습득물은 … 8월 11일자로 경찰서로 이관"
+    #  "2024년 10월 23일 이전 습득물은 … 11월 12일자로 경찰서로 이관"
+    #  "2016년 8월 31일 이전 입고된 습득물들에 관해서는 2016년 10월 6일 부로 송파경찰서 … 이관"
+    m = re.search(r"(20\d\d)년\s*(\d{1,2})월\s*(\d{1,2})일\s*(?:~\s*(\d{1,2})월\s*(\d{1,2})일)?\s*(?:까지|이전)[^.]{0,40}?(?:습득물|입고)"
+                  r"[^.]*?(?:(20\d\d)년\s*)?(\d{1,2})월\s*(\d{1,2})일\s*(?:자로|부로)\s*(\S*?경찰서)", t)
     if m:
         y = int(m[1]); a_m, a_d = int(m[2]), int(m[3])
         if m[4]:
             frm = dt.date(y, a_m, a_d); to = dt.date(y + (1 if int(m[4]) < a_m else 0), int(m[4]), int(m[5]))
         else:
             frm = None; to = dt.date(y, a_m, a_d)
-        mm, md = int(m[6]), int(m[7])
-        moved = dt.date(to.year + (1 if mm < to.month else 0), mm, md)
+        mm, md = int(m[7]), int(m[8])
+        my = int(m[6]) if m[6] else to.year + (1 if mm < to.month else 0)
+        moved = dt.date(my, mm, md)
         transfer = {"from": frm.isoformat() if frm else None, "cutoff": to.isoformat(), "moved": moved.isoformat(),
-                    "station": m[8] if m[8] != "경찰서" else "관할 경찰서"}
+                    "station": m[9] if m[9] != "경찰서" else "관할 경찰서"}
     return center, items, transfer
 
 KCISA_URL = "https://api.kcisa.kr/openapi/service/rest/meta/KSClost"
@@ -162,21 +169,30 @@ def collect_lost():
     notices = list_notices()
     for k, n in enumerate(notices):
         key = str(n["list_no"])
-        if key in cache and cache[key].get("v") == 4: continue
+        if key in cache and cache[key].get("v") == 5: continue
         h = http(LOST_VIEW.format(n=n["list_no"]))
         center, items, transfer = parse_view(h)
-        cache[key] = {"v": 4, **n, "center": center, "items": items, "transfer": transfer}
+        cache[key] = {"v": 5, **n, "center": center, "items": items, "transfer": transfer}
         if k % 20 == 0: log("view", k, "/", len(notices))
         time.sleep(0.25)
     json.dump(cache, open(cache_f, "w", encoding="utf-8"), ensure_ascii=False)
     return [cache[str(n["list_no"])] for n in notices]
 
 def build_lost(notices):
-    tl = sorted({(t["cutoff"], t["moved"], t["station"]) for n in notices if (t := n.get("transfer"))})
+    # 이관 구간: 공지에 시작일이 적혀 있으면 그대로, "~까지/이전"만 있으면 직전 기준일 다음 날부터.
+    # 가장 오래된 공지는 시작일을 모르므로 None(그 이전 전체). 공지 사이 빈 기간은 지어내지 않는다.
+    seen = {}
+    for n in notices:
+        t = n.get("transfer")
+        if t and (t["cutoff"], t["moved"]) not in seen:
+            seen[(t["cutoff"], t["moved"])] = {**t, "notice": n["list_no"]}
+    tl = sorted(seen.values(), key=lambda t: t["cutoff"])
     transfers = []
-    for k, (c, m, st) in enumerate(tl):
-        frm = (dt.date.fromisoformat(tl[k - 1][0]) + dt.timedelta(days=1)).isoformat() if k else "2000-01-01"
-        transfers.append({"from": frm, "cutoff": c, "moved": m, "station": st})
+    for k, t in enumerate(tl):
+        frm = t.get("from")
+        if not frm and k:
+            frm = (dt.date.fromisoformat(tl[k - 1]["cutoff"]) + dt.timedelta(days=1)).isoformat()
+        transfers.append({"from": frm, "cutoff": t["cutoff"], "moved": t["moved"], "station": t["station"], "notice": t["notice"]})
     transfers.reverse()
     merged = {}
     for n in sorted(notices, key=lambda x: (x["posted"], x["list_no"])):  # 오래된 공고 → 최신 공고 순으로 덮어씀
@@ -197,9 +213,10 @@ def build_lost(notices):
         else:
             status = "kept"
             for t in transfers:
-                if it["date"] <= t["cutoff"] and it["date"] >= t["from"]:
+                if it["date"] <= t["cutoff"] and (not t["from"] or it["date"] >= t["from"]):
                     status = "transferred"; it["moved"] = t["moved"]; it["station"] = t["station"]; break
             else:
+                # 공지 구간 밖이지만 최근 기준일보다 오래됨 → 이관 추정(이관일 미상)
                 if transfers and it["date"] <= transfers[0]["cutoff"]: status = "transferred"
         if "연락" in note and status == "kept": status = "contacted"
         iid = hashlib.md5('|'.join(map(str, key)).encode()).hexdigest()[:10]
@@ -240,22 +257,75 @@ def collect_events(months_back=14, months_fwd=3):
                             "organizer": (e.get("spns") or "").strip(), "contact": (e.get("nqry") or "").strip(),
                             "url": EVENT_VIEW.format(s=seq)}
         time.sleep(0.2)
-    ev = sorted(out.values(), key=lambda x: x["from"], reverse=True)
+    uniq = {}
+    for e in out.values():  # 같은 행사가 다른 번호로 두 번 올라온 경우 하나만 남긴다
+        k = (re.sub(r"\s+", "", e["title"]), e["zone"], e["from"])
+        if k not in uniq or e["seq"] > uniq[k]["seq"]: uniq[k] = e
+    ev = sorted(uniq.values(), key=lambda x: x["from"], reverse=True)
     log("events", len(ev))
     return ev
 
-# ------------------------------------------------------------------ FAQ
+# ------------------------------------------------------------------ 공공데이터포털 파일데이터
+def filedata(pk):
+    """공공데이터포털 파일데이터(로그인 불필요) CSV를 받아 문자열로 돌려준다."""
+    import csv, io
+    page = http(f"https://www.data.go.kr/data/{pk}/fileData.do")
+    m = re.search(r"fn_fileDataDown\('(\d+)', '([^']+)', '([^']*)','(\d+)', '(\d+)'\)", page)
+    if not m: raise RuntimeError("download button not found")
+    j = json.loads(http("https://www.data.go.kr/tcs/dss/selectFileDataDownload.do", data=urllib.parse.urlencode(
+        {"publicDataDetailPk": m[2], "publicDataPk": m[1], "atchFileId": m[3], "fileDetailSn": m[4], "publicDataTyCode": "PR0051"}).encode()))
+    req = urllib.request.Request(f"https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId={j['atchFileId']}&fileDetailSn={j['fileDetailSn']}",
+                                 headers={"User-Agent": UA})
+    raw = urllib.request.urlopen(req, timeout=60).read()
+    for enc in ("utf-8-sig", "cp949"):
+        try: t = raw.decode(enc); break
+        except UnicodeDecodeError: continue
+    return list(csv.DictReader(io.StringIO(t)))
+
+FAQ_FILE_PAGE = "https://www.data.go.kr/data/15089962/fileData.do"
+EN_SHOW_PAGE = "https://www.data.go.kr/data/15149169/fileData.do"
+
 def collect_faq():
-    h = http(FAQ_URL)
+    """「자주 묻는 질문정보」 파일데이터가 기준. 같은 질문의 공식 게시판 원문(문장부호 보존)이 있으면 본문만 그것으로 바꾼다."""
+    board = {}
+    try:
+        h = http(FAQ_URL)
+        for q, a in re.findall(r'class="question">.*?<span class="title">(.*?)</span>.*?class="answer"[^>]*>(.*?)</div>\s*</div>', h, re.S):
+            q = text(q); a = text(a)
+            a = re.sub(r"[ \t]*\n[ \t\n]*", "\n", a).strip()
+            a = re.sub(r"^[^\w가-힣]*A\s*\n", "", a).strip()
+            board[re.sub(r"[^가-힣a-z0-9]", "", q.lower())] = a
+    except Exception as e:  # noqa: BLE001
+        log("faq board fail", type(e).__name__)
     out = []
-    for q, a in re.findall(r'class="question">.*?<span class="title">(.*?)</span>.*?class="answer"[^>]*>(.*?)</div>\s*</div>', h, re.S):
-        q = text(q); a = text(a)
-        a = re.sub(r"^(-->\s*)?A\s+", "", a).strip()
-        a = re.sub(r"[ \t]*\n[ \t\n]*", "\n", a).strip()
-        a = re.sub(r"^[^\w가-힣]*A\s*\n", "", a).strip()
-        if q and a: out.append({"q": q, "a": a, "url": FAQ_URL})
-    log("faq", len(out))
+    for r in filedata("15089962"):
+        q = (r.get("제목") or "").strip(); a = (r.get("내용") or "").strip()
+        if not q: continue
+        k = re.sub(r"[^가-힣a-z0-9]", "", q.lower())
+        out.append({"q": q if q.endswith(("?", ".")) else q + "?" if q.endswith(("요", "까", "나요")) else q,
+                    "a": board.get(k, a), "id": (r.get("일련번호") or "").strip(),
+                    "category": (r.get("카테고리") or "").strip(), "url": FAQ_FILE_PAGE})
+    log("faq(file)", len(out), "board-matched", sum(1 for x in out if re.sub(r"[^가-힣a-z0-9]", "", x["q"].lower()) in board))
     return out
+
+def collect_en_shows():
+    """「영문 공연정보」 파일데이터 → 영어 화면의 공연명·해외 예매 링크."""
+    out = []
+    for r in filedata("15149169"):
+        t = html.unescape((r.get("공연제목") or "").strip()); d = (r.get("공연일자") or "").strip()[:10]
+        if t and re.match(r"\d{4}-\d\d-\d\d", d):
+            out.append({"id": (r.get("일련번호") or "").strip(), "title": t, "date": d, "url": (r.get("상세주소") or "").strip()})
+    out.sort(key=lambda x: x["date"], reverse=True)
+    log("en shows", len(out))
+    return out
+
+def save_dictionary_csv():
+    import csv
+    with open(os.path.join(OUT, "dictionary.csv"), "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["종류", "표준ID", "표준명(한)", "표준명(영)", "경찰청 대분류/담당센터", "동의어·공고 표기"])
+        for c in CATEGORIES: w.writerow(["품목", c["id"], c["ko"], c["en"], c["police"], " | ".join(c["syn"])])
+        for z in ZONES: w.writerow(["장소", z["id"], z["ko"], z["en"], z.get("center") or "", " | ".join(z["syn"])])
 
 # ------------------------------------------------------------------ 경찰청(선택)
 def collect_police():
@@ -276,7 +346,8 @@ def collect_police():
             g = lambda t: (re.search(rf"<{t}>(.*?)</{t}>", r, re.S) or [None, ""])[1].strip()
             dep = g("depPlace")
             if not any(s in dep for s in ("올림픽공원역", "몽촌토성역", "한성백제역", "방이역", "둔촌오륜역", "송파경찰서")): continue
-            out.append({"id": g("atcId"), "date": g("fdYmd"), "name": g("fdPrdtNm"), "cls": g("prdtClNm"),
+            nm = re.sub(r"([가-힣])[가-힣]{1,3}(?=(님|씨|의\s))", r"\1○○", g("fdPrdtNm"))  # 실명 가리기
+            out.append({"id": g("atcId"), "date": g("fdYmd"), "name": nm, "cls": g("prdtClNm"),
                         "color": g("clrNm"), "where": dep, "cat": classify_item(g("fdPrdtNm") + " " + g("prdtClNm"))})
         if len(rows) < 100: break
     log("police", len(out))
@@ -301,9 +372,14 @@ def main():
     except Exception as e:  # noqa: BLE001
         meta["sources"]["events"] = {"ok": False, "error": type(e).__name__}
     try:
-        fq = collect_faq(); save("faq_ko.json", fq); meta["sources"]["faq"] = {"ok": True, "n": len(fq)}
+        fq = collect_faq(); save("faq_ko.json", fq); meta["sources"]["faq"] = {"ok": True, "n": len(fq), "via": "data.go.kr file 15089962"}
     except Exception as e:  # noqa: BLE001
         meta["sources"]["faq"] = {"ok": False, "error": type(e).__name__}
+    try:
+        es = collect_en_shows(); save("en_shows.json", es); meta["sources"]["en_shows"] = {"ok": True, "n": len(es), "via": "data.go.kr file 15149169"}
+    except Exception as e:  # noqa: BLE001
+        meta["sources"]["en_shows"] = {"ok": False, "error": type(e).__name__}
+    save_dictionary_csv()
     pol = collect_police()
     if pol is not None:
         save("police.json", pol); meta["sources"]["police"] = {"ok": True, "n": len(pol)}

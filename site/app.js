@@ -3,7 +3,8 @@
   'use strict';
 
   const I18N = global.I18N || (typeof require === 'function' ? require('./i18n.js') : null);
-  const LOST112_URL = 'https://www.lost112.go.kr';
+  // 경찰청 유실물 통합포털(옛 LOST112)은 경찰민원24로 통합됐다
+  const LOST112_URL = 'https://minwon24.police.go.kr/';
   const NOTICE_BASE_URL = 'https://www.ksponco.or.kr/olympicpark/board.es?mid=a20708000000&bid=0051&act=view&list_no=';
   const PAGE_SIZE = 8;
 
@@ -81,7 +82,21 @@
     return union === 0 ? 0 : inter / union;
   }
 
-  // SPEC 4장: 정규화 후 syn 포함 일치(최장 syn 우선) → 없으면 2-gram 자카드 상위 3개(0.25 이상) → 없으면 etc
+  // 동의어 일치: 영문·숫자 동의어는 단어 경계로(during→ring, what→hat 오탐 방지), 한·중·일은 공백 제거 후 포함 여부로
+  const ASCII_SYN = /^[a-z0-9 .'\-]+$/i;
+  function escapeRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function synMatchLen(rawQuery, qNorm, syn) {
+    const s = String(syn || '').toLowerCase().trim();
+    if (!s) return 0;
+    if (ASCII_SYN.test(s)) {
+      const re = new RegExp(`(^|[^a-z0-9])${escapeRe(s).replace(/\s+/g, '\\s*')}s?($|[^a-z0-9])`);
+      return re.test(String(rawQuery || '').toLowerCase()) ? s.replace(/\s+/g, '').length : 0;
+    }
+    const sNorm = normalizeText(s);
+    return sNorm && qNorm.includes(sNorm) ? sNorm.length : 0;
+  }
+
+  // SPEC 4장: 동의어 일치(최장 우선) → 없으면 2-gram 자카드 상위 3개(0.25 이상) → 없으면 etc
   function interpret(query, categories) {
     const qNorm = normalizeText(query);
     if (!qNorm) {
@@ -93,10 +108,8 @@
       if (!cat.syn || !cat.syn.length) return;
       let maxLen = 0;
       cat.syn.forEach((s) => {
-        const sNorm = normalizeText(s);
-        if (sNorm && qNorm.includes(sNorm) && sNorm.length > maxLen) {
-          maxLen = sNorm.length;
-        }
+        const len = synMatchLen(query, qNorm, s);
+        if (len > maxLen) maxLen = len;
       });
       if (maxLen > 0) {
         exactMatches.push({ id: cat.id, confidence: 100, exact: true, matchLen: maxLen });
@@ -105,7 +118,11 @@
 
     if (exactMatches.length > 0) {
       exactMatches.sort((a, b) => b.matchLen - a.matchLen);
-      return exactMatches.slice(0, 3).map(({ id, confidence, exact }) => ({ id, confidence, exact }));
+      // 가장 길게 일치한 품목만 '일치'로 표시하고, 짧은 부분 일치는 보조 후보로 낮춘다
+      const top = exactMatches[0].matchLen;
+      return exactMatches.slice(0, 3).map(({ id, matchLen }) => (
+        matchLen === top ? { id, confidence: 100, exact: true } : { id, confidence: Math.round((matchLen / top) * 60), exact: false }
+      ));
     }
 
     const fuzzyMatches = [];
@@ -139,9 +156,9 @@
     zones.forEach((z) => {
       if (!z.syn || !z.syn.length) return;
       z.syn.forEach((s) => {
-        const sNorm = normalizeText(s);
-        if (sNorm && qNorm.includes(sNorm) && sNorm.length > bestLen) {
-          bestLen = sNorm.length;
+        const len = synMatchLen(query, qNorm, s);
+        if (len > bestLen) {
+          bestLen = len;
           bestZone = z.id;
         }
       });
@@ -151,28 +168,34 @@
 
   // -------------------- 단계·행사·후보·FAQ·통계 로직 --------------------
 
+  // 단계 판정. transfers는 최신순이며 todayStr 이전에 실제로 이관된 공지만 본다.
   function determineStage(lostDate, todayStr, transfers) {
-    const list = transfers || [];
-    const matchedTransfer = list.find(
-      (tr) => tr.from <= lostDate && lostDate <= tr.cutoff && tr.moved <= todayStr
-    );
-    if (matchedTransfer) {
-      return { stage: 'transferred', transfer: matchedTransfer };
-    }
-    const elapsed = diffDays(todayStr, lostDate);
-    if (elapsed <= 3) {
-      return { stage: 'pending', transfer: null };
-    }
+    const list = (transfers || []).filter((tr) => tr.moved && tr.moved <= todayStr);
     const latest = list[0];
+    // 1) 공지에 적힌 이관 구간에 들면 경찰서 이관
+    const matched = list.find((tr) => lostDate <= tr.cutoff && (!tr.from || tr.from <= lostDate));
+    // 가장 오래된 공지처럼 시작일이 없는 구간은 실제 이관일을 알 수 없으므로 날짜를 보여 주지 않는다
+    if (matched) return matched.from ? { stage: 'transferred', transfer: matched } : { stage: 'transferred', transfer: null, gap: true };
+    // 2) 최근 이관 기준일 이전인데 공지 구간 밖이면(공지 누락 기간) 이관됐을 가능성이 높음
+    if (latest && lostDate <= latest.cutoff) return { stage: 'transferred', transfer: null, gap: true };
+    const elapsed = diffDays(todayStr, lostDate);
     const sinceLatestMove = latest ? diffDays(todayStr, latest.moved) : 0;
-    if ((latest && sinceLatestMove >= 20) || elapsed >= 25) {
-      return { stage: 'transfer_window', transfer: null };
-    }
+    const windowOpen = Boolean(latest && sinceLatestMove >= 20) || elapsed >= 25;
+    // 3) 이관 가능 구간이면 분실 직후라도 먼저 알린다(기다리는 사이 이관될 수 있음)
+    if (windowOpen) return { stage: 'transfer_window', transfer: null, recent: elapsed <= 3 };
+    if (elapsed <= 3) return { stage: 'pending', transfer: null };
     return { stage: 'kept', transfer: null };
   }
 
   function getDayEvents(lostDate, resolvedZone, events) {
-    const sameDay = (events || []).filter((ev) => ev.from <= lostDate && lostDate <= ev.to);
+    const seen = new Set();
+    const sameDay = (events || []).filter((ev) => {
+      if (!(ev.from <= lostDate && lostDate <= ev.to)) return false;
+      const key = `${String(ev.title || '').replace(/\s+/g, '')}|${ev.zone}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     if (resolvedZone && resolvedZone !== 'unknown') {
       return sameDay.filter((ev) => ev.zone === resolvedZone);
     }
@@ -246,7 +269,8 @@
       return items;
     }
 
-    const tokens = tokenizeQuery(trimmed);
+    const STOP_EN = new Set(['the', 'is', 'a', 'an', 'where', 'what', 'how', 'do', 'does', 'i', 'my', 'can', 'to', 'of', 'in', 'at', 'on', 'for', 'are', 'and', 'it', 'me', 'please', 'there', 'when', 'which']);
+    const tokens = tokenizeQuery(trimmed).filter((t) => lang !== 'en' || !STOP_EN.has(t));
     if (tokens.length === 0) return [];
 
     if (lang === 'en') {
@@ -276,34 +300,42 @@
       });
 
       return scored
-        .filter((s) => s.score >= 1 && s.ratio >= 0.5)
+        .filter((s) => s.score >= 1.5 && s.ratio >= (tokens.length <= 2 ? 1 : 0.5))
         .sort((a, b) => b.score - a.score)
         .slice(0, 3)
         .map((s) => s.item);
     }
 
-    // KO: faq_ko + 보관 기간 공식 안내에서 q+a 토큰 겹침 점수 계산
-    const koPool = (faqKo || []).concat([I18N.KO_RETENTION_FAQ]);
+    // KO: 질문 제목 일치를 필수로 하고(본문만 겹치면 제외), 짧은 검색어는 모든 단어가 맞아야 한다
+    const SYN_KO = {
+      '운영시간': ['이용시간', '개방시간', '운영시간', '몇시'], '이용시간': ['이용시간', '개방시간', '운영시간'],
+      '개방시간': ['이용시간', '개방시간'], '분실': ['분실', '유실물', '소지품', '잃어'], '유실물': ['분실', '유실물', '소지품'],
+      '잃어버렸어요': ['분실', '소지품'], '보관': ['보관', '유실물', '분실'], '주차요금': ['주차', '요금'], '전화번호': ['안내센터', '전화'],
+      '화장실': ['화장실'], '반려견': ['반려견', '애완동물'], '강아지': ['반려견', '애완동물']
+    };
+    const expanded = tokens.map((tok) => SYN_KO[tok] || [tok]);
+    const wantsMisa = /미사/.test(trimmed);
+    const koPool = (faqKo || []).concat([I18N.KO_RETENTION_FAQ]).filter((item) => wantsMisa || !/미사/.test(item.q));
     const scored = koPool.map((item) => {
       const qLower = item.q.toLowerCase();
       const aLower = item.a.toLowerCase();
       let score = 0;
       let matched = 0;
-
-      tokens.forEach((tok) => {
-        const inQ = qLower.includes(tok);
-        const inA = aLower.includes(tok);
+      let inTitle = 0;
+      expanded.forEach((alts) => {
+        const inQ = alts.some((t) => qLower.includes(t));
+        const inA = alts.some((t) => aLower.includes(t));
         if (inQ || inA) {
-          score += (inQ ? 2 : 0) + (inA ? 1 : 0);
+          score += (inQ ? 3 : 0) + (inA ? 1 : 0);
           matched += 1;
+          if (inQ) inTitle += 1;
         }
       });
-
-      return { item, score, ratio: matched / tokens.length };
+      return { item, score, ratio: matched / expanded.length, inTitle };
     });
-
+    const need = expanded.length <= 2 ? 1 : 0.6;
     return scored
-      .filter((s) => s.score >= 1 && s.ratio >= 0.5)
+      .filter((s) => s.inTitle >= 1 && s.ratio >= need)
       .sort((a, b) => b.score - a.score)
       .slice(0, 3)
       .map((s) => s.item);
@@ -455,6 +487,13 @@
       state.lang = langParam;
     }
 
+    // 시연용 기준일(?asof=YYYY-MM-DD): 심사 날짜가 달라도 같은 화면을 재현한다
+    const asof = params.get('asof');
+    if (asof && parseDateUTC(asof) !== null && asof <= state.today) {
+      state.today = asof;
+      state.asof = asof;
+    }
+
     const d = params.get('d');
     const z = params.get('z');
     const q = params.get('q');
@@ -485,6 +524,7 @@
     if (state.lang === 'en') {
       params.set('lang', 'en');
     }
+    if (state.asof) params.set('asof', state.asof);
     const qs = params.toString();
     const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
     window.history.replaceState(null, '', newUrl);
@@ -503,6 +543,7 @@
       if (txt) node.textContent = txt;
     });
 
+    document.getElementById('lang-group').setAttribute('aria-label', lang === 'en' ? 'Language' : '언어 선택');
     document.getElementById('lang-ko').setAttribute('aria-pressed', String(lang === 'ko'));
     document.getElementById('lang-en').setAttribute('aria-pressed', String(lang === 'en'));
 
@@ -514,6 +555,7 @@
     document.getElementById('stage-stepper').setAttribute('aria-label', I18N.t(lang, 'stepperAria'));
 
     if (state.data) {
+      renderNotices();
       populateZoneSelect();
       populateColorSelect();
       renderFooter();
@@ -588,11 +630,27 @@
           rel: 'noopener noreferrer'
         }, [I18N.t(lang, 'eventLink'), svgIcon('external')]));
       }
+      // 영어 화면: 공연장은 영문 구역명, 제목은 「영문 공연정보」에서 같은 기간·비슷한 제목을 찾아 쓴다
+      let venue = ev.venue;
+      let title = ev.title;
+      if (lang === 'en') {
+        const z = getZoneObj(ev.zone);
+        if (z && z.id !== 'unknown') venue = z.en;
+        const enShow = findEnglishShow(ev, state.data.enShows || []);
+        if (enShow) {
+          title = enShow.title;
+          if (enShow.url) {
+            metaItems.push(el('a', {
+              className: 'ext-link', href: enShow.url, target: '_blank', rel: 'noopener noreferrer'
+            }, [I18N.t(lang, 'enShowLink'), svgIcon('external')]));
+          }
+        }
+      }
 
       eventWrap.appendChild(el('div', { className: 'event-banner' }, [
         el('p', {
           className: 'event-lead',
-          text: I18N.t(lang, 'eventBanner', { venue: ev.venue, title: ev.title })
+          text: I18N.t(lang, 'eventBanner', { venue, title })
         }),
         el('div', { className: 'event-meta' }, metaItems)
       ]));
@@ -624,11 +682,18 @@
     );
     body.appendChild(todoOl);
 
-    if (stageInfo.stage === 'transferred' && stageInfo.transfer) {
+    if (stageInfo.stage === 'transfer_window' && stageInfo.recent) {
+      body.insertBefore(el('p', { className: 'stage-urgent', text: I18N.t(lang, 'recentWindow') }), body.firstChild);
+    }
+
+    if (stageInfo.stage === 'transferred') {
       const tr = stageInfo.transfer;
+      const info = tr
+        ? I18N.t(lang, 'transferInfo', { moved: tr.moved, station: stationName(tr.station, lang) })
+        : I18N.t(lang, 'transferInfoUnknown');
       const callout = el('div', { className: 'transfer-callout' }, [
         el('p', { className: 'transfer-callout-text' }, [
-          el('strong', { text: I18N.t(lang, 'transferInfo', { moved: tr.moved, station: stationName(tr.station, lang) }) })
+          el('strong', { text: info })
         ]),
         el('a', {
           className: 'btn btn-primary btn-sm',
@@ -786,11 +851,20 @@
       const slice = results.slice(0, state.visibleCount);
       slice.forEach((item) => {
         const isPicked = state.pickedItem && state.pickedItem.id === item.id;
-        const displayName = (item.name || '').trim() || catName;
-        const displayPlace = (item.place || '').trim() || I18N.t(lang, 'placeFallback');
+        // 영어 화면: 제목은 표준 품목 영문, 공고 원문 품명·장소는 (Korean)으로 덧붙인다
+        const itemCat = getCategoryObj(item.cat);
+        const displayName = lang === 'en' ? itemCat.en : ((item.name || '').trim() || catName);
+        const rawPlace = (item.place || '').trim();
+        const zoneEn = lang === 'en' && item.zone && item.zone !== 'unknown' ? getZoneObj(item.zone).en : '';
+        const displayPlace = lang === 'en'
+          ? (zoneEn || I18N.t(lang, 'placeFallback'))
+          : (rawPlace || I18N.t(lang, 'placeFallback'));
         const centerObj = dict.centers[item.center];
         const centerLabel = centerObj ? (lang === 'en' ? centerObj.en : centerObj.ko) : '';
         const metaParts = [displayPlace, item.date];
+        if (lang === 'en') {
+          metaParts.unshift(`${I18N.t(lang, 'noticeNameLabel')}: ${item.name}${rawPlace ? ` / ${rawPlace}` : ''}`);
+        }
         if (centerLabel) metaParts.push(centerLabel);
         if (item.status === 'transferred' && item.moved) {
           metaParts.push(`${item.moved} ${stationName(item.station, lang)}`.trim());
@@ -898,6 +972,54 @@
     }
     renderCandidatesSection();
     renderKoreanCard();
+    if (state.pickedItem) {
+      // 담았다는 피드백: 확인 카드 영역을 펼치고 그 위치로 이동
+      const det = document.getElementById('confirm-card-details');
+      if (det) {
+        det.open = true;
+        det.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
+  // 「영문 공연정보」에서 같은 기간·비슷한 제목의 영문 공연명을 찾는다
+  function latinTokens(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).filter((t) => t.length >= 2);
+  }
+  function findEnglishShow(ev, enShows) {
+    const evTok = new Set(latinTokens(ev.title));
+    let best = null;
+    let bestScore = 0;
+    enShows.forEach((s) => {
+      if (!(s.date >= addDays(ev.from, -3) && s.date <= ev.to)) return;
+      const tok = latinTokens(s.title);
+      if (!tok.length) return;
+      const inter = tok.filter((t) => evTok.has(t)).length;
+      const score = evTok.size ? inter / Math.min(tok.length, evTok.size) : 0;
+      if (score > bestScore) { bestScore = score; best = s; }
+    });
+    return bestScore >= 0.5 ? best : null;
+  }
+
+  // 상단 안내 띠: 시연 기준일, 데이터 갱신 지연
+  function renderNotices() {
+    const lang = state.lang;
+    let bar = document.getElementById('notice-bar');
+    if (!bar) {
+      bar = el('div', { id: 'notice-bar', className: 'notice-bar', role: 'status' });
+      const main = document.querySelector('main') || document.body;
+      main.insertBefore(bar, main.firstChild);
+    }
+    bar.innerHTML = '';
+    const msgs = [];
+    if (state.asof) msgs.push(I18N.t(lang, 'asofBanner', { d: state.asof }));
+    const updated = state.data && state.data.meta && state.data.meta.updated;
+    if (updated) {
+      const ageH = (Date.now() - Date.parse(updated)) / 3600000;
+      if (!state.asof && ageH > 48) msgs.push(I18N.t(lang, 'staleBanner', { u: formatUpdated(updated) }));
+    }
+    msgs.forEach((m) => bar.appendChild(el('p', { text: m })));
+    bar.hidden = msgs.length === 0;
   }
 
   // -------------------- 결과 ③ 한국어 확인 카드 렌더링 --------------------
@@ -1043,7 +1165,7 @@
           href: item.url,
           target: '_blank',
           rel: 'noopener noreferrer'
-        }, [I18N.t(lang, /bid=0051/.test(item.url || '') ? 'faqSourceLost' : 'faqSource'), svgIcon('external')])
+        }, [I18N.t(lang, /bid=0051/.test(item.url || '') ? 'faqSourceLost' : (/data\.go\.kr/.test(item.url || '') ? 'faqSourceFile' : 'faqSource')), svgIcon('external')])
       ]));
     });
   }
@@ -1077,6 +1199,11 @@
       el('p', { className: 'stat-sub', text: latest ? stationName(latest.station, lang) : '' })
     ]));
 
+    const dl = document.getElementById('dict-download');
+    if (dl) dl.remove();
+    grid.parentNode.appendChild(el('a', {
+      id: 'dict-download', className: 'ext-link dict-download', href: 'data/dictionary.csv', download: 'doechatgil_dictionary.csv'
+    }, [I18N.t(state.lang, 'dictDownload'), svgIcon('external')]));
     const list = document.getElementById('transfers-list');
     list.innerHTML = '';
     stats.recentTransfers.forEach((tr) => {
@@ -1243,7 +1370,10 @@
         fetchJson('data/meta.json')
       ]);
 
-      state.data = { lost, events, dict, faqKo, faqEn, police, meta };
+      let enShows = [];
+      try { enShows = await fetchJson('data/en_shows.json'); } catch (_) { enShows = []; }
+      state.data = { lost, events, dict, faqKo, faqEn, police, meta, enShows };
+      renderNotices();
       populateZoneSelect();
       populateColorSelect();
       renderFooter();

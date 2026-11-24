@@ -10,7 +10,7 @@
   --border: #e5e7eb;
   --status-kept: #1f3a5f;
   --status-kept-bg: #f3f6fa;
-  --status-returned: #6b7280;
+  --status-returned: #4b5563;
   --status-returned-bg: #f3f4f6;
   --status-transferred: #b45309;
   --status-transferred-bg: #fdf6ec;
@@ -1113,3 +1113,12 @@ html.large-text .chip {
   gap: 0.4rem;
   align-items: center;
 }
+
+/* 2차 검토 반영: 터치 영역·안내 띠 */
+.ext-link { min-height: 24px; display: inline-flex; align-items: center; padding: 2px 0; }
+#toggle-all-period { width: 24px; height: 24px; }
+.notice-bar { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 12px; padding: 10px 14px; margin: 0 0 16px; font-size: 0.9rem; line-height: 1.5; }
+.notice-bar p { margin: 0; }
+.notice-bar p + p { margin-top: 4px; }
+.stage-urgent { background: #fff7ed; border-left: 4px solid #b45309; color: #7c2d12; border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; font-weight: 600; line-height: 1.5; }
+.dict-download { margin-top: 16px; font-size: 0.9rem; }

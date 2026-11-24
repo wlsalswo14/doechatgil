@@ -1,0 +1,34 @@
+﻿종류,표준ID,표준명(한),표준명(영),경찰청 대분류/담당센터,동의어·공고 표기
+품목,watch,시계,Watch,시계,스마트워치 | 스마트 워치 | 워치 | 손목시계 | 시계 | 전자시계 | 애플워치 | 갤럭시워치 | watch | smartwatch | apple watch | galaxy watch | 갤럭시 워치 | 갤럭시워치 | 腕時計 | 時計 | スマートウォッチ | 手表 | 智能手表
+품목,earphone,무선 이어폰,Earphones,전자기기,블루투스 이어폰 | 무선 이어폰 | 무선이어폰 | 이어폰 | 에어팟 | 갤럭시 버즈 | 갤럭시버즈 | 버즈 | 헤드셋 | 헤드폰 | galaxy buds | airpods | airpod | earbuds | earbud | earphones | earphone | headphones | headset | buds | イヤホン | ワイヤレスイヤホン | ヘッドホン | 耳机 | 无线耳机
+품목,carkey,자동차 열쇠,Car key,자동차,자동차 열쇠 | 자동차열쇠 | 차 열쇠 | 차열쇠 | 차key | 차 key | 차키 | 차 키 | 자동차키 | 자동차 키 | 자동차 key | 스마트키 | 스마트 키 | 스마트key | 스마트 key | car key | car keys | key fob | fob | 車の鍵 | 車のキー | スマートキー | 车钥匙 | 汽车钥匙
+품목,phone,휴대폰,Phone,휴대폰,휴대폰 | 핸드폰 | 휴대전화 | 스마트폰 | 아이폰 | 갤럭시 | 폰 | phone | cellphone | cell phone | mobile | iphone | smartphone | galaxy | 携帯 | スマホ | 携帯電話 | 手机
+품목,wallet,지갑,Wallet,지갑,카드지갑 | 카드 지갑 | 목걸이형 카드지갑 | 반지갑 | 장지갑 | 동전지갑 | 머니클립 | 카드케이스 | 카드홀더 | 지갑 | wallet | card holder | cardholder | card case | purse | money clip | 財布 | カードケース | 钱包 | 卡包
+품목,card,카드·신분증,Cards & IDs,카드,신용카드 | 체크카드 | 교통카드 | 버스카드 | 학생증 | 사원증 | 신분증 | 주민등록증 | 운전면허증 | credit card | debit card | transit card | t-money | tmoney | id card | student id | driver's license | クレジットカード | 交通カード | 信用卡 | 交通卡
+품목,bag,가방,Bag,가방,가방 | 백팩 | 핸드백 | 파우치 | 쇼핑백 | 에코백 | 캐리어 | 여행용가방 | 여행용 가방 | 종이가방 | 부직포 가방 | 크로스백 | 방수팩 | bag | backpack | handbag | pouch | tote | suitcase | shopping bag | バッグ | かばん | 鞄 | リュック | ポーチ | 背包 | 手提包 | 书包
+품목,glasses,안경,Glasses,기타물품,선글라스 | 썬글라스 | 안경 | glasses | sunglasses | spectacles | メガネ | 眼鏡 | サングラス | 眼镜 | 墨镜 | 太阳镜
+품목,device,전자기기,Electronics,전자기기,카메라 | 디지털 카메라 | 즉석 카메라 | 노트북 | 태블릿 | 아이패드 | 보조배터리 | 블루투스 스피커 | 스피커 | 드론 | mp3 | 셀카봉 | 리모컨 | 보청기 | 체성분 | 충전기 | 보조 배터리 | mobile battery | battery | charger | camera | laptop | tablet | ipad | power bank | speaker | drone | カメラ | ノートパソコン | モバイルバッテリー | 相机 | 笔记本电脑 | 充电宝
+품목,jewelry,귀금속,Jewelry,귀금속,반지 | 목걸이 | 팔찌 | 귀걸이 | ring | necklace | bracelet | earring | 指輪 | ネックレス | 戒指 | 项链
+품목,clothes,의류,Clothing,의류,의류 | 점퍼 | 패딩 | 외투 | 자켓 | 재킷 | 가디건 | 모자 | 장갑 | 목도리 | 머플러 | hoodie | muffler | jacket | coat | hat | cap | gloves | scarf | ジャケット | 帽子 | 手袋 | 外套 | 帽子
+품목,kids,유아·레저용품,Kids & leisure,스포츠용품,유모차 | 유아용 킥보드 | 킥보드 | 인라인 | 아기신발 | 인형 | 라켓 | 캐치볼 | 그늘막 | 텐트 | 우양산 | 우산 | 양산 | stroller | scooter | doll | racket | umbrella | tent | ベビーカー | 傘 | 婴儿车 | 雨伞
+품목,id,여권·서류,Passport & documents,증명서,여권 | 통장 | 도장 | 수첩 | 파일 | passport | パスポート | 护照
+품목,key,열쇠,Keys,기타물품,열쇠꾸러미 | 열쇠 꾸러미 | 열쇠 | keys | key | 鍵 | 钥匙
+품목,goods,공연 굿즈,Concert goods,기타물품,응원봉 | 포토카드 | 포카 | 슬로건 | 굿즈 | lightstick | light stick | photocard | photo card | slogan | merch | ペンライト | トレカ | 应援棒 | 小卡
+품목,etc,기타,Other,기타물품,텀블러 | 보온병 | tumbler
+장소,kspodome,KSPO DOME,KSPO DOME,meeting,kspo | dome | 체조경기장 | 체조
+장소,olympichall,올림픽홀,Olympic Hall,peace,올림픽홀 | 뮤즈라이브 | olympic hall
+장소,handball,핸드볼경기장,Handball Stadium,meeting,핸드볼 | 티켓링크 | ticketlink | live arena | handball
+장소,woori,우리금융아트홀,Woori Financial Art Hall,peace,우리금융 | 아트홀 | art hall
+장소,peace,평화의광장,Peace Plaza,peace,평화의광장 | 평화의 광장 | 평화의광징 | 평화의문 | 평화의 문 | 국기광장 | 올림픽회관 | 회관 | 몽촌해자 | 수변무대 | peace plaza | peace gate
+장소,meeting,만남의광장,Meeting Plaza,meeting,만남의광장 | 만남의 광장 | meeting plaza
+장소,lawn88,88잔디마당,88 Lawn,meeting,88잔디 | 88 잔디 | 88마당 | 잔디마당 | 88 lawn | lawn
+장소,lake88,88호수,88 Lake,meeting,88호수 | 호수 | 88 lake | lake
+장소,mongchon,몽촌토성,Mongchon Fortress,peace,몽촌토성 | 나홀로 | 곰말 | 들꽃 | 야생화 | 토성 | 몽촌정 | 한성백제 | mongchon | lone tree
+장소,rose,장미광장,Rose Square,meeting,장미 | rose
+장소,picnic,피크닉장,Picnic Area,peace,피크닉 | picnic
+장소,hanul,한얼광장,Haneol Plaza,meeting,한얼 | haneol
+장소,global,지구촌공원,Global Village Park,meeting,지구촌
+장소,soma,소마미술관·조각공원,SOMA Museum,peace,소마 | 조각공원 | soma
+장소,sports,벨로드롬·수영장·테니스장,Velodrome / Pool / Tennis,meeting,벨로드롬 | 수영장 | 테니스 | 펜싱 | velodrome | pool | tennis
+장소,gates,출입문·주차장,Gates / Parking,meeting,남1문 | 남2문 | 남3문 | 남4문 | 동1문 | 동2문 | 북1문 | 북2문 | 서1문 | 주차장 | p1 | p2 | p3 | 올림픽공원역 | olympic park station | parking | gate
+장소,unknown,공원 내(위치 미상),Somewhere in the park,,
